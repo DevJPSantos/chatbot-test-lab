@@ -17,6 +17,7 @@ const chatFlow = {
 const appRoot = document.getElementById('app-root');
 let messagesDisplay;
 let optionsSidebar;
+const navigationStack = ['initial'];
 
 function scrollToBottom() {
     if (messagesDisplay) {
@@ -50,11 +51,32 @@ function updateOptions(options) {
 }
 
 function handleOptionSelect(option) {
+    if (option === 'Voltar') {
+        navigationStack.pop();
+        const previousKey = navigationStack[navigationStack.length - 1];
+        const previousState = chatFlow[previousKey];
+
+        renderMessage('user', option);
+        renderMessage('bot', previousState.botMessage);
+
+        const optionsToShow = previousState.options;
+        if (navigationStack.length > 1) {
+            updateOptions(['🔙 Voltar', ...optionsToShow]);
+        } else {
+            updateOptions(optionsToShow);
+        }
+        return;
+    }
+
     renderMessage('user', option);
 
     const nextState = chatFlow[option];
     const botResponseText = nextState ? nextState.botMessage : "Desculpe, não entendi. Por favor, selecione uma opção válida.";
     const nextOptions = nextState ? nextState.options : chatFlow.initial.options;
+
+    if (nextState) {
+        navigationStack.push(option);
+    }
 
     const typingIndicatorDiv = renderMessage('bot', 'Digitando...');
     typingIndicatorDiv.classList.add('typing-indicator');
@@ -64,7 +86,11 @@ function handleOptionSelect(option) {
             typingIndicatorDiv.parentNode.removeChild(typingIndicatorDiv);
         }
         renderMessage('bot', botResponseText);
-        updateOptions(nextOptions);
+        if (navigationStack.length > 1) {
+            updateOptions(['Voltar', ...nextOptions]);
+        } else {
+            updateOptions(nextOptions);
+        }
     }, 500);
 }
 
@@ -86,15 +112,18 @@ function startChat() {
     messagesDisplay = appRoot.querySelector('.messages-display');
     optionsSidebar = appRoot.querySelector('.options-sidebar');
 
+    navigationStack.length = 0;
+    navigationStack.push('initial');
+
     renderMessage('bot', chatFlow.initial.botMessage);
     updateOptions(chatFlow.initial.options);
 
-    document.getElementById('evaluate-app-button').addEventListener('click', () => {
-        alert("Função 'Avalie o app' em desenvolvimento!");
-    });
-    document.getElementById('report-problem-button').addEventListener('click', () => {
-        alert("Função 'Reportar problema' em desenvolvimento!");
-    });
+    document.getElementById('evaluate-app-button').addEventListener('click', () =>
+        alert("Função 'Avalie o app' em desenvolvimento!")
+    );
+    document.getElementById('report-problem-button').addEventListener('click', () =>
+        alert("Função 'Reportar problema' em desenvolvimento!")
+    );
 }
 
 function renderInitialScreen() {
